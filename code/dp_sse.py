@@ -194,11 +194,11 @@ class dp_sse:
     # Input: 
     #   id: integer/string
     # Output:
-    #   a list of self.smax + 1 integers mod self.large_p 
+    #   a list of self.smax + 3 integers mod self.large_p 
     ##
     def gen_token_basic_id(self, id):
         p1 = str(id).zfill( self.p1_len )
-		p2 = str(  ).zfill( self.p2_len )
+		p2 = str( self. ).zfill( self.p2_len )
 		p3 = '100'.zfill( self.p3_len )
 		term = p1 + p2 + p3
 	    return self.poly_extend( term )        
@@ -261,14 +261,3 @@ class dp_sse:
             [int(idx[i]) * int(token[i]) for i in range(len(idx))]
             ) % large_p == 0
 
-    #should only take in roots and do coeffs
-    # otherwise cannot be in parallel
-    def wrap_gen_index_plain_parallel(x):
-        res = []
-        for i in range(len( x )):
-            roots, id = x[i]
-            p = np.poly1d(roots, True) # coefficients from high degree to low
-            coeffs = p.coeffs % large_p
-            coeffs = coeffs.tolist()
-            res.append( coeffs )
-        return res 
