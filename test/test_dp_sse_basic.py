@@ -1,0 +1,149 @@
+import unittest
+import sys
+import os
+sys.path.append(os.path.abspath('../code'))
+import dp_sse as dp_sse_pkg
+import numpy as np 
+
+dp_sse = dp_sse_pkg.dp_sse()
+
+class Test_dp_sse_basic(unittest.TestCase):
+
+    def test_hash(self):
+        s = "test"
+        h = dp_sse.hash(s)
+        self.assertEqual( type(h), type(int(2**160)) )
+        self.assertLess( h, 2**160 )
+    
+    def test_hash_1(self):
+        id = [1, 2, 10]
+        ans = [dp_sse.hash_1(_id) for _id in id ]
+        for i in range(len( ans )):
+            self.assertEqual( len(ans[i]), dp_sse.p2_len )
+            self.assertLessEqual( int(ans[i]), dp_sse.cmax )
+            self.assertGreaterEqual( int(ans[i]), 1 )
+    
+    def test_hash_2(self):
+        id = [1, 2, 10]
+        ans = [dp_sse.hash_2(_id) for _id in id ]
+        for i in range(len( ans )):
+            self.assertEqual( len(ans[i]), dp_sse.p2_len )
+            self.assertLessEqual( int(ans[i]), dp_sse.cmax )
+            self.assertGreaterEqual( int(ans[i]), 1 )
+    
+    def test_p_keyword(self):
+        ss = ["1"*100, "" ]
+        for i in range(len(ss)):
+            s = ss[i]
+            ans = dp_sse.p_keyword( s )
+            self.assertEqual( len(ans),  dp_sse.p1_len)
+            self.assertLess( int( ans ), 10** dp_sse.p1_len )
+    
+    def test_p_counter(self):
+        k = dp_sse.p_keyword("test")
+        h1, h2 = dp_sse.hash_1(k), dp_sse.hash_2(k)
+        self.assertEqual( len(dp_sse.p_counter( k, h1, h2 )[0]), dp_sse.p3_len )
+        self.assertEqual( len(dp_sse.p_counter( k, h1, h2 )[1]), dp_sse.p2_len )
+    
+    def test_gen_term_basic_2_hash_keyword(self):
+        keyword = "test"
+        ids = ["10", 10]
+        for id in ids:
+            ans = dp_sse.gen_term_basic_2_hash_keyword(keyword, id)
+            self.assertLess( ans, dp_sse.large_p )
+    
+    def test_gen_term_basic_2_hash_padding(self):
+        ans = dp_sse.gen_term_basic_2_hash_padding()
+        self.assertLess( ans,  dp_sse.large_p)
+    
+    def test_gen_term_basic_2_hash_id(self):
+        id = 10
+        ans = dp_sse.gen_term_basic_2_hash_id( id )
+        self.assertEqual( len(ans), 2)
+        for a in ans:
+            self.assertLess(a, dp_sse.large_p)
+
+    
+    def test_poly_extend(self):
+        term = dp_sse.gen_term_basic_2_hash_padding()
+        ans = dp_sse.poly_extend( term )
+        self.assertEqual( len(ans), dp_sse.smax + 3 )
+        for i in ans:
+            self.assertLess( i, dp_sse.large_p )
+    
+    def test_gen_token_basic_keyword(self):
+        keyword = "test"
+        buckets = ["10", 10]
+        counters = ["2", 2]
+        for bucket in buckets:
+            for counter in counters:
+                ans = dp_sse.gen_token_basic_keyword( keyword, bucket, counter )
+                self.assertEqual( len(ans), dp_sse.smax + 3 )
+    
+    def test_gen_token_basic_padding(self):
+        ans = dp_sse.gen_token_basic_padding()
+        self.assertEqual( len(ans), dp_sse.smax + 3 )
+    
+    def test_gen_token_basic_id_hash_1(self):
+        ids = ["10", 10]
+        for id in ids:
+            ans = dp_sse.gen_token_basic_id_hash_1(id)
+            self.assertEqual( len(ans), dp_sse.smax + 3)
+    
+    def test_gen_token_basic_id_hash_2(self):
+        ids = ["10", 10]
+        for id in ids:
+            ans = dp_sse.gen_token_basic_id_hash_2(id)
+            self.assertEqual( len(ans), dp_sse.smax + 3)
+
+    def test_gen_polynomial_roots(self):
+        keywords = ["0"*i for i in range( dp_sse.smax - 10 )]
+        ids = ["1",1]
+        for id in ids:
+            ans = dp_sse.gen_polynomial_roots( keywords, id )
+            self.assertEqual( len(ans), dp_sse.smax + 2 )
+    
+    def test_gen_polynomial(self):
+        roots = [i for i in range( dp_sse.smax + 2 )] 
+        roots = np.array(roots, dtype = object)
+        coeffs = dp_sse.gen_polynomial(roots)
+        self.assertEqual( len(coeffs), dp_sse.smax + 3 )
+        self.assertEqual( coeffs[-1], 0 )
+    
+    def test_gen_index_per_file(self):
+        keywords = ["1"*i for i in range( dp_sse.smax - 10 ) ]
+        ids = [10, '10']
+        for id in ids:
+            coeffs = dp_sse.gen_index_per_file( keywords, id )
+            self.assertEqual( len(coeffs), dp_sse.smax + 3 )
+            for c in coeffs:
+                self.assertLess( c, dp_sse.large_p )
+    
+    def test_search_plain(self):
+        keywords = ["1"*i for i in range( dp_sse.smax - 10 ) ]
+        id = 0 
+
+        index = dp_sse.gen_index_per_file( keywords, id )
+
+        k_true, k_false = "1", "2"
+        h1, h2 = dp_sse.hash_1(id), dp_sse.hash_2( id )
+        
+        t1 = dp_sse.gen_token_basic_id_hash_1( id )
+        t2 = dp_sse.gen_token_basic_id_hash_2( id )
+        t3 = dp_sse.gen_token_basic_keyword( k_true, h1, 1 )
+        t4 = dp_sse.gen_token_basic_keyword( k_true, h2, 1 )
+        t5 = dp_sse.gen_token_basic_keyword( k_false, h2, 1 )
+        t6 = dp_sse.gen_token_basic_keyword( k_false, h1, 1 )
+
+        self.assertEqual( dp_sse.search_plain( index, t1 ), True )
+        self.assertEqual( dp_sse.search_plain( index, t2 ), True )
+        self.assertEqual( dp_sse.search_plain( index, t5 ), False )
+        self.assertEqual( dp_sse.search_plain( index, t6 ), False )
+        self.assertSetEqual ( set([dp_sse.search_plain( index, t3 ), 
+            dp_sse.search_plain( index, t4 )]), set([True, False]) )
+        
+
+
+
+if __name__ == "__main__":
+    unittest.main()
