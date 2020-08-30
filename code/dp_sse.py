@@ -8,6 +8,7 @@ import time
 import hashlib
 import config 
 import time 
+import ipe_wrap 
 
 class dp_sse_plaintext: 
     # Init parameters
@@ -27,6 +28,9 @@ class dp_sse_plaintext:
         self.p1_len = config.p1_len 
         self.p2_len = config.p2_len 
         self.p3_len = config.p3_len 
+        self.ipe = ipe_wrap.ipe_wrap( self.smax + 3 )
+        self.ipe.init_para()
+        self.ipe.para_setup()
 
         #init other parameters
         self.counter_map = defaultdict(int)
@@ -74,7 +78,7 @@ class dp_sse_plaintext:
         #return self.hash_1(id) #make everything run in one-hash setting
         #comment the above line to run in 2 hash setting.
         random.seed( int( id ) )
-        random.seed( random.randint( 1, sys.maxint ) )
+        random.seed( random.randint( 1, sys.maxsize ) )
         pos = random.randint(1, self.cmax)
         return str(pos).zfill( self.p2_len )
     
@@ -104,9 +108,9 @@ class dp_sse_plaintext:
         self.set_random_seed()
         res = (0, 0)
         if self.counter_map_2_hash[k+h1] < self.counter_map_2_hash[k+h2]:
-			res = (k + h1, h1)
+            res = (k + h1, h1)
         elif self.counter_map_2_hash[k+h1] > self.counter_map_2_hash[k+h2]:
-			res = (k + h2, h2)
+            res = (k + h2, h2)
         else:
             res = (k + h1, h1) if random.random() < 0.5 else (k + h2, h2)
         self.counter_map_2_hash[res[0]] += 1
@@ -274,6 +278,8 @@ class dp_sse_plaintext:
         roots = self.gen_polynomial_roots(keywords, id)
         return self.gen_polynomial_from_roots( roots )
     
+    def gen_polynomial_encrypted(self, poly):
+        return self.ipe.encrypt_polycoeffs( poly )    
 
     # Given an index idx and a query token, return match (True) or not (False)
     # Input:
@@ -390,6 +396,22 @@ class dp_sse_plaintext:
 
         all_tokens = tp_tokens + fp_tokens + nm_tokens
         return all_tokens 
+    
+    def gen_tokens_encrypted(self, keyword, tp, fp):
+        tp_tokens, fp_tokens, nm_tokens = [], [], []
+        tp_tokens = self.gen_tokens_tp( keyword, tp )
+        fp_tokens = self.gen_tokens_fp_hash_1( fp )
+        fp_tokens +=  self.gen_tokens_fp_hash_2( fp )
+        nm_tokens = self.gen_tokens_non_match( fp )
+
+        all_tokens = tp_tokens + fp_tokens + nm_tokens
+        all_tokens_encrypted = []
+        for tk in all_tokens:
+            all_tokens_encrypted.append( 
+                self.ipe.encrypt_token( tk )
+             )
+        return all_tokens_encrypted 
+    
 
         
 

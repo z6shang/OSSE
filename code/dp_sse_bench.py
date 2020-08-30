@@ -25,6 +25,13 @@ class dp_sse_bench:
         self.init_keyword_univ_and_stop_words()
         self.init_bucket_status()
 
+        # To align with paper, we set alias for the following functions
+        self.dpsse_BuildIndex = self.build_index_plain
+        self.dpsse_Trapdoor = self.dp_sse_pt.gen_tokens_plain
+        # Note that benchmarking_kernel_simple is built only for benchmarking
+        # but the computation logic in it can be easily applied to real implementations.
+        self.dpsse_Search_bench = self.benchmarking_kernel_simple
+
     def init_db(self):
         with open(self.db_fn, 'r') as fd:
             self.db = json.load(fd)
@@ -41,7 +48,7 @@ class dp_sse_bench:
 
     def init_bucket_status(self):
         init_bucket_list = [0 for i in range( self.dp_sse_pt.cmax + 1 )]
-        init_bucket_list[0] = sys.maxint
+        init_bucket_list[0] = sys.maxsize
         for keyword in self.keyword_univ:
             self.bucket_status[ keyword ] = init_bucket_list[:]
         
@@ -344,7 +351,7 @@ class dp_sse_bench:
         computation_graph = self.build_computation_graph_bench( simulated_index, simulated_tokens, serialized_map_index, serialized_map_tokens )
         tm = [round( len(computation_graph) / num_core * time_per_eval / 60, 2) for num_core in num_core_list ]
         return len(computation_graph), [
-            "{} core, time: {} mins".format(num_core, t) for t in tm 
+            "{} core, time: {} mins".format(num_core_list[i], t) for i, t in enumerate(tm) 
         ]
 
 
