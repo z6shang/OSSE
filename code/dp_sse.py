@@ -7,8 +7,9 @@ import json
 import time
 import hashlib
 import config 
+import time 
 
-class dp_sse: 
+class dp_sse_plaintext: 
     # Init parameters
     def __init__(self):
         # init parameters from config.py
@@ -33,6 +34,11 @@ class dp_sse:
         # map keyword + hash(keyword) to the current number of such string 
         self.counter_map_2_hash = defaultdict(int)
         self.sk = ""
+
+    # set random seed for random generation
+    def set_random_seed(self):
+        random.seed( time.time() )
+
 
     # hash a keyword string into an integer (160bits), no modular
     # Input: 
@@ -68,7 +74,7 @@ class dp_sse:
         #return self.hash_1(id) #make everything run in one-hash setting
         #comment the above line to run in 2 hash setting.
         random.seed( int( id ) )
-        random.seed( random.randint( 1, self.cmax ) )
+        random.seed( random.randint( 1, sys.maxint ) )
         pos = random.randint(1, self.cmax)
         return str(pos).zfill( self.p2_len )
     
@@ -95,6 +101,7 @@ class dp_sse:
     #   bucket number, string of fixed length self.p2_len 
     ##
     def p_counter(self, k, h1, h2):
+        self.set_random_seed()
         res = (0, 0)
         if self.counter_map_2_hash[k+h1] < self.counter_map_2_hash[k+h2]:
 			res = (k + h1, h1)
@@ -224,8 +231,7 @@ class dp_sse:
         term = hash(term) % self.large_p
         return self.poly_extend( term )        
         
-        
-   
+    
     # Given a list of keywords in a file, generate the corresponding polynomial roots
     # Input:
     #   keywords: a list of keywords (string)
@@ -250,7 +256,7 @@ class dp_sse:
     # Output:
     #   np.array, all coefficients of the polynomial 
     ##
-    def gen_polynomial(self, roots):
+    def gen_polynomial_from_roots(self, roots):
         poly = np.poly1d(roots, True) # coefficients from high degree to low
         coeffs = poly.coeffs % ( self.large_p)
         coeffs = coeffs.tolist()
@@ -264,9 +270,9 @@ class dp_sse:
     #   list of integer mod self.large_p, all coefficients of the polynomial
     #   self.smax +3 in total 
     ##
-    def gen_index_per_file(self, keywords, id):
+    def gen_polynomial_plain(self, keywords, id):
         roots = self.gen_polynomial_roots(keywords, id)
-        return self.gen_polynomial( roots )
+        return self.gen_polynomial_from_roots( roots )
     
 
     # Given an index idx and a query token, return match (True) or not (False)
@@ -282,4 +288,108 @@ class dp_sse:
         return sum(
             [int(idx[i]) * int(token[i]) for i in range(len(idx))]
             ) % self.large_p == 0
+    
+    # Generate false positive basic tokens (unencrypted) based on hash_1 
+    # Input:
+    #   fp: false positive rate per hash function
+    # Note: tp and fp are not overall true positive rate or false positive rate. 
+    # They are aligned with the notation in the paper.
+    # Output:
+    #   A list of (token, bucket) pairs 
+    ## 
+    def gen_tokens_fp_hash_1(self, fp):
+        self.set_random_seed()        
+        fp_tokens_hash_1 = []
+        for id in range( self.new_db_size ):
+            if random.random() <= fp:
+                fp_tokens_hash_1.append(
+                    ( self.gen_token_basic_id_hash_1( id ), int(self.hash_1( id )) )
+                )
+        return fp_tokens_hash_1
+    
+    # Generate false positive basic tokens (unencrypted) based on hash_2
+    # Input:
+    #   fp: false positive rate per hash function
+    # Note: tp and fp are not overall true positive rate or false positive rate. 
+    # They are aligned with the notation in the paper.
+    # Output:
+    #   A list of (token, bucket) pairs 
+    ## 
+    def gen_tokens_fp_hash_2(self, fp):
+        self.set_random_seed()        
+        fp_tokens_hash_2 = []
+        for id in range( self.new_db_size ):
+            if random.random() <= fp:
+                fp_tokens_hash_2.append(
+                    (self.gen_token_basic_id_hash_2( id ), int( self.hash_2( id )) )
+                )
+        return fp_tokens_hash_2 
+    
+    # Generate true positive basic tokens (unencrypted)
+    # Input:
+    #   keyword: string 
+    #   tp: true positive rate per hash function
+    # Note: tp and fp are not overall true positive rate or false positive rate. 
+    # They are aligned with the notation in the paper.
+    # Output:
+    #   A list of (token, bucket) pairs 
+    ## 
+    def gen_tokens_tp(self, keyword, tp):
+        tp_tokens = []
+        self.set_random_seed()
+        for counter in range(self.countermax):
+            for bucket in range(1, self.cmax + 1, 1):
+                if random.random() <= tp:
+                    tp_tokens.append( 
+                        (self.gen_token_basic_keyword(keyword, bucket, counter), bucket)
+                    )
+        return tp_tokens 
+    
+    # Generate non-match basic tokens (unencrypted) 
+    # Input:
+    #   fp: false positive rate per hash function
+    # Note: tp and fp are not overall true positive rate or false positive rate. 
+    # They are aligned with the notation in the paper.
+    # Output:
+    #   A list of (token, bucket) pairs 
+    ## 
+    def gen_tokens_non_match(self, fp):
+        nm_tokens = []
+        self.set_random_seed()
+        pool = [i for i in range(1, self.new_db_size + 1)]
+        while len(pool) > 0:
+            tmp = []
+            for id in pool:
+                # for hash_1 
+                if random.random() <= fp:
+                    nm_tokens.append(
+                        ( self.gen_token_basic_padding(), id % self.cmax )
+                    )
+                    tmp.append( id )
+            pool = tmp[:]
+
+        return nm_tokens 
+
+
+    # Generate all basic tokens (unencrypted) given a keyword 
+    # Input:
+    #   keyword : string 
+    #   tp:  true positive rate 
+    #   fp: false positive rate per hash function
+    # Note: tp and fp are not overall true positive rate or false positive rate. 
+    # They are aligned with the notation in the paper.
+    # Output:
+    #   A list of tokens 
+    ## 
+    def gen_tokens_plain(self, keyword, tp, fp):
+        tp_tokens, fp_tokens, nm_tokens = [], [], []
+        tp_tokens = self.gen_tokens_tp( keyword, tp )
+        fp_tokens = self.gen_tokens_fp_hash_1( fp )
+        fp_tokens +=  self.gen_tokens_fp_hash_2( fp )
+        nm_tokens = self.gen_tokens_non_match( fp )
+
+        all_tokens = tp_tokens + fp_tokens + nm_tokens
+        return all_tokens 
+
+        
 

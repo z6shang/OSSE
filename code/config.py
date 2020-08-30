@@ -8,9 +8,7 @@ large_p = 208617601094290618684641029477488665211553761021
 stopwords_size = 200 
 countermax = 3
 db_path = './enron_db_no_stopwords_size_limit.json'
-enc_index = './enc_index.json'
 plain_index = './plain_index.json' #2 hash setting
-sk_dump_path = './sk_dump.json'
 core_num = 4
 sk = ""
 #placeholder length (number in oct)
