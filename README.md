@@ -52,7 +52,6 @@ This library ships with the following modules:
 ### Submodules
 
 We rely on the following two submodules:
-
-1.  for ipe support. (Note that it is not required in benchmarking.)
-   1.  [FLINT](http://flintlib.org/) for the C backend 
+1. [FHIPE](https://github.com/kevinlewi/fhipe) for ipe support. (Note that it is not required in benchmarking.)
+   1. [FLINT](http://flintlib.org/) for the C backend 
    2. [Charm](http://charm-crypto.com/) for the pairings implementation 
