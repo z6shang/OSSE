@@ -4,6 +4,7 @@ import time
 import random 
 import sys 
 from collections import defaultdict
+import os 
 
 class dp_sse_bench:
     def __init__(self):
@@ -362,6 +363,10 @@ class dp_sse_bench:
     #   N/A, all stored in ../db/ 
     ##
     def create_and_store_index_bench(self):
+        #if the index-related parameter are already created, then return 
+        if os.path.isfile( self.pt_index_bench_fn ) and os.path.isfile( self.serialized_index_bench_fn ) and os.path.isfile( self.serialized_index_map_bench_fn):
+            return 
+
         pt_index_bench = self.build_index_plain_bench()
         pt_index_bench_rearrange = self.rearrange_pt_index_bench( pt_index_bench )
         serialized_index, serialized_map_index = self.serialze_rearrange_bench( pt_index_bench_rearrange )
@@ -393,21 +398,24 @@ class dp_sse_bench:
     
 
 if __name__ == '__main__':
-    dp_sse_bh = dp_sse_bench()
-    # Already created 
-    #dp_sse_bh.create_and_store_index_bench()
     
+    num_core_list = [4, 8, 16, 32, 64, 128, 160]
+    time_per_eval = 1.25
+
+    dp_sse_bh = dp_sse_bench()
+    dp_sse_bh.create_and_store_index_bench()
+    #load index 
     simulated_index, serialized_index, serialized_map_index = dp_sse_bh.load_index_bench( )
 
     keyword = "test"
     tp, fp = 0.9999, 0.01
+    #create tokens
     all_tokens = dp_sse_bh.gen_tokens_bench(keyword, tp, fp)
     print(len( all_tokens ))
-    num_core_list = [4, 8, 16, 32, 64, 128, 160]
-    time_per_eval = 1.25
     rearranged_tokens = dp_sse_bh.rearrange_all_tokens_bench( all_tokens )
     _, serialized_map_tokens = dp_sse_bh.serialze_rearrange_bench( rearranged_tokens )
 
+    #search benchmarking
     print( dp_sse_bh.benchmarking_kernel_simple(simulated_index, rearranged_tokens, serialized_map_index, serialized_map_tokens, num_core_list, time_per_eval ))
 
 

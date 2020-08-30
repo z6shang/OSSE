@@ -1,0 +1,3 @@
+[submodule "fhipe"]
+	path = fhipe
+	url = https://github.com/kevinlewi/fhipe.git

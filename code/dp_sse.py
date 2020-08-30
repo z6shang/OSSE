@@ -28,10 +28,12 @@ class dp_sse_plaintext:
         self.p1_len = config.p1_len 
         self.p2_len = config.p2_len 
         self.p3_len = config.p3_len 
+        # uncomment the following 3 lines and the function self.gen_tokens_encrypted and self.gen_polynomial_encrypted to enable dp_sse_encrypted
+        '''
         self.ipe = ipe_wrap.ipe_wrap( self.smax + 3 )
         self.ipe.init_para()
         self.ipe.para_setup()
-
+        '''
         #init other parameters
         self.counter_map = defaultdict(int)
         # A map string => integer
@@ -278,8 +280,10 @@ class dp_sse_plaintext:
         roots = self.gen_polynomial_roots(keywords, id)
         return self.gen_polynomial_from_roots( roots )
     
+    '''
     def gen_polynomial_encrypted(self, poly):
         return self.ipe.encrypt_polycoeffs( poly )    
+    '''
 
     # Given an index idx and a query token, return match (True) or not (False)
     # Input:
@@ -397,6 +401,7 @@ class dp_sse_plaintext:
         all_tokens = tp_tokens + fp_tokens + nm_tokens
         return all_tokens 
     
+    '''
     def gen_tokens_encrypted(self, keyword, tp, fp):
         tp_tokens, fp_tokens, nm_tokens = [], [], []
         tp_tokens = self.gen_tokens_tp( keyword, tp )
@@ -411,6 +416,7 @@ class dp_sse_plaintext:
                 self.ipe.encrypt_token( tk )
              )
         return all_tokens_encrypted 
+    '''
     
 
         
