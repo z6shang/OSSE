@@ -1,10 +1,12 @@
-# An Implementation of DPSSE
+# An Implementation of OSSE
 
 This is repository contains the prototype implementation of OSSE. The files in this repository refer to the scheme as DP-SSE (Differentially Private SSE) since this was its original name.
 
 This implementation is a research poc built for micro benchmarking purpose, and is not intended to be used in production-level code as it has not been carefully verified for potential performance issues or security flaws.
 
 Authors: Zhiwei Shang, Simon Oya, Andreas Peter, Florian Kerschbaum.
+
+Paper: Obfuscated Access and Search Patterns in Searchable Encryption, 28th Network and Distributed System Security Symposium (NDSS), 2021.
 
 Contact Zhiwei for questions about the code: z6shang@uwaterloo.ca.
 
