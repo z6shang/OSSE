@@ -1,11 +1,12 @@
 # An Implementation of DPSSE
 
-This is an implementation of the differential private SSE described here: (link to be posted)
+This is repository contains the prototype implementation of OSSE. The files in this repository refer to the scheme as DP-SSE (Differentially Private SSE) since this was its original name.
 
 This implementation is a research poc built for micro benchmarking purpose, and is not intended to be used in production-level code as it has not been carefully verified for potential performance issues or security flaws.
 
-Authors(To be posted)
-Contact xxx for questions about the code: xxx@xxx.xx
+Authors: Zhiwei Shang, Simon Oya, Andreas Peter, Florian Kerschbaum.
+
+Contact Zhiwei for questions about the code: z6shang@uwaterloo.ca.
 
 ## Prerequisites
 
